@@ -16,7 +16,7 @@ function readmore_formatter_field_formatter_info() {
       'settings' => array(
         // Add default settings with text, so we can wrap them in t().
         'speed' => 100, // in milliseconds
-        'maxHeight' => 180, // in pixel
+        'collapsedHeight' => 75,
         'heightMargin' => 16, // in pixel
         'moreLink' => '<a href="#">' . t('Read more') . '</a>', 
         'lessLink' => '<a href="#">' . t('Close') . '</a>', 
@@ -46,11 +46,11 @@ function readmore_formatter_field_formatter_settings_form($field, $instance, $vi
     '#element_validate' => array('_element_validate_integer_positive'),
   );
 
-  $element['maxHeight'] = array(
+  $element['collapsedHeight'] = array(
     '#type' => 'textfield',
-    '#title' => t('Height'),
+    '#title' => t('Collapsed Height'),
     '#description' => t('Height after which readmore will be added.'),
-    '#default_value' => $settings['maxHeight'],
+    '#default_value' => $settings['collapsedHeight'],
     '#element_validate' => array('_element_validate_integer_positive'),
   );
 
@@ -143,7 +143,7 @@ function readmore_formatter_field_formatter_view($entity_type, $entity, $field, 
   // hack to prevent integer to string field conversion
   $integer_fields = array(
     'speed',
-    'maxHeight',
+    'collapsedHeight',
     'heightMargin',
     'embedCSS',
     'startOpen',
