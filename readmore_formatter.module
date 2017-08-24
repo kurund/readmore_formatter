@@ -18,6 +18,7 @@ function readmore_formatter_field_formatter_info() {
         'speed' => 100, // in milliseconds
         'collapsedHeight' => 75,
         'heightMargin' => 16, // in pixel
+        'strip_options' => array(),
         'moreLink' => '<a href="#">' . t('Read more') . '</a>', 
         'lessLink' => '<a href="#">' . t('Close') . '</a>', 
         'embedCSS' => 1,
@@ -60,6 +61,17 @@ function readmore_formatter_field_formatter_settings_form($field, $instance, $vi
     '#description' => t('Avoids collapsing blocks that are only slightly larger than maxHeight.'),
     '#default_value' => $settings['heightMargin'],
     '#element_validate' => array('_element_validate_integer_positive'),
+  );
+
+  $element['strip_options'] = array(
+    '#title' => t('Additional options'),
+    '#type' => 'checkboxes',
+    '#options' => array(
+      'text' => t('Strip HTML'),
+      'media' => t('Strip Media module tokens'),
+    ),
+    '#description' => t('Stripping out HTML and Media tags from the field'),
+    '#default_value' => empty($settings['strip_options']) ? array() : $settings['strip_options'],
   );
 
   $element['moreLink'] = array(
@@ -154,7 +166,30 @@ function readmore_formatter_field_formatter_view($entity_type, $entity, $field, 
   }
 
   foreach ($items as $delta => $item) {
+    // The default behaviour is to use the main body field, but the summary
+    // option allows users to use the summary field IFF it is not empty.
+    // Decide if to use summary or value.
+    $source = !empty($settings['summary_handler']) && $settings['summary_handler'] != 'ignore'
+              && !empty($item['summary']) ? 'summary' : 'value';
+
+    // Strip media tags.
+    if (!empty($settings['strip_options']) && !empty($settings['strip_options']['media'])) {
+      $match_count = 0;
+      // Replace media token with nothing, see media_filter().
+      $item[$source] = preg_replace("/\[\[.*?\]\]/s", '', $item[$source], -1, $match_count);
+      // If we got any matches the safe markup needs to be regenerated.
+      if ($match_count) {
+        unset($item['safe_' . $source]);
+      }
+    }
+
     $output = _text_sanitize($instance, $langcode, $item, 'value');
+
+    // Strip HTML tags.
+    if (!empty($settings['strip_options']) && !empty($settings['strip_options']['text'])) {
+      $output = drupal_html_to_text($output);
+    }
+
     $element[$delta] = array(
       '#markup' => $output,
       '#prefix' => '<div class="field-readmore field-readmore-' . $delta . '">',
